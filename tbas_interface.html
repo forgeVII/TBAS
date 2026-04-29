@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TBAS — Tactical Battlefield Awareness Suite</title>
+<style>
+  :root {
+    --bg: #0a0c0a; --bg2: #0f130f; --bg3: #141a14; --border: #1e2a1e;
+    --green: #00ff88; --green-dim: #004422; --green-mid: #00aa55;
+    --red: #ff3344; --red-dim: #440011;
+    --blue: #0088ff; --blue-dim: #001844;
+    --yellow: #ffcc00; --yellow-dim: #332200;
+    --cyan: #00ddff; --cyan-dim: #003344;
+    --muted: #4a604a; --font: 'Courier New', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--green); font-family:var(--font); font-size:13px; min-height:100vh; overflow-x:hidden; }
+  body::before { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px); pointer-events:none; z-index:100; }
+  header { border-bottom:1px solid var(--border); padding:12px 20px; display:flex; align-items:center; justify-content:space-between; background:var(--bg2); }
+  .logo { font-size:16px; letter-spacing:4px; color:var(--green); text-shadow:0 0 8px var(--green); }
+  .logo span { color:var(--muted); font-size:11px; letter-spacing:2px; display:block; margin-top:2px; }
+  .header-right { display:flex; align-items:center; gap:16px; }
+  #connect-btn { background:var(--green-dim); border:1px solid var(--green-mid); color:var(--green); font-family:var(--font); font-size:12px; letter-spacing:2px; padding:6px 16px; cursor:pointer; transition:all 0.2s; }
+  #connect-btn:hover { background:#006633; }
+  #connect-btn.connected { border-color:var(--green); background:#003322; }
+  #connect-btn.connected::before { content:'● '; color:var(--green); }
+  .status-dot { width:8px; height:8px; border-radius:50%; background:var(--muted); transition:all 0.3s; }
+  .status-dot.active { background:var(--green); box-shadow:0 0 6px var(--green); }
+  .grid { display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:auto auto; gap:1px; background:var(--border); height:calc(100vh - 53px); }
+  .panel { background:var(--bg2); padding:16px; position:relative; overflow:hidden; }
+  .panel-label { font-size:10px; letter-spacing:3px; color:var(--muted); margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+
+  /* RADAR */
+  .panel-radar { grid-column:1/2; grid-row:1/3; display:flex; flex-direction:column; align-items:center; }
+  #radar-canvas { width:100%; max-width:280px; aspect-ratio:1; margin:auto 0; }
+
+  /* IFF */
+  .panel-iff { grid-column:2/3; grid-row:1/2; display:flex; flex-direction:column; justify-content:center; }
+  .iff-result { font-size:40px; letter-spacing:6px; text-align:center; padding:8px 0; transition:all 0.3s; }
+  .iff-result.friend { color:var(--green); text-shadow:0 0 20px var(--green); }
+  .iff-result.enemy  { color:var(--red);   text-shadow:0 0 20px var(--red); }
+  .iff-result.idle   { color:var(--muted); text-shadow:none; }
+  .iff-dist { text-align:center; font-size:32px; letter-spacing:4px; color:var(--muted); margin-top:4px; transition:all 0.3s; min-height:40px; }
+  .iff-counter { text-align:center; font-size:11px; color:var(--muted); letter-spacing:2px; margin-top:8px; }
+  .iff-bar { height:2px; background:var(--border); margin-top:8px; overflow:hidden; }
+  .iff-bar-fill { height:100%; width:0%; background:var(--green); transition:width 0.1s,background 0.3s; }
+  .status-line { font-size:10px; text-align:center; color:var(--cyan); letter-spacing:1px; margin-top:6px; min-height:12px; }
+
+  /* MODE */
+  .panel-mode { grid-column:3/4; grid-row:1/2; }
+  .mode-display { font-size:24px; letter-spacing:4px; text-align:center; padding:12px 0; }
+  .mode-display.manual       { color:var(--yellow); text-shadow:0 0 12px var(--yellow); }
+  .mode-display.surveillance { color:var(--blue);   text-shadow:0 0 12px var(--blue); }
+  .mode-display.servo_test   { color:var(--cyan);   text-shadow:0 0 12px var(--cyan); }
+  .mode-display.acoustic     { color:var(--green);  text-shadow:0 0 12px var(--green); }
+  .tx-mode { text-align:center; font-size:11px; letter-spacing:3px; margin-top:4px; }
+  .tx-mode.friend { color:var(--green-mid); }
+  .tx-mode.enemy  { color:var(--red); }
+  .controls { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:12px; }
+  .ctrl-btn { background:var(--bg3); border:1px solid var(--border); color:var(--muted); font-family:var(--font); font-size:10px; letter-spacing:1px; padding:8px 4px; cursor:pointer; transition:all 0.15s; text-align:center; }
+  .ctrl-btn:hover:not(:disabled) { border-color:var(--green-mid); color:var(--green); background:var(--green-dim); }
+  .ctrl-btn:active:not(:disabled) { transform:scale(0.97); }
+  .ctrl-btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .ctrl-btn.active-surv   { border-color:var(--blue);   color:var(--blue);   background:var(--blue-dim); }
+  .ctrl-btn.active-test   { border-color:var(--cyan);   color:var(--cyan);   background:var(--cyan-dim); }
+  .ctrl-btn.active-aco    { border-color:var(--green);  color:var(--green);  background:var(--green-dim); }
+  .ctrl-btn.active-manual { border-color:var(--yellow); color:var(--yellow); background:var(--yellow-dim); }
+  .ctrl-btn.active-enemy  { border-color:var(--red);    color:var(--red);    background:var(--red-dim); }
+  .ctrl-btn.active-friend { border-color:var(--green);  color:var(--green);  background:var(--green-dim); }
+
+  /* ANGLE */
+  .panel-angle { grid-column:2/3; grid-row:2/3; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+  .angle-display { font-size:56px; letter-spacing:2px; color:var(--green); text-shadow:0 0 16px var(--green); line-height:1; }
+  .angle-unit { font-size:20px; color:var(--muted); margin-left:4px; }
+  .angle-bar-wrap { width:100%; margin-top:12px; }
+  .angle-track { height:3px; background:var(--border); position:relative; }
+  .angle-needle { position:absolute; top:-6px; width:3px; height:15px; background:var(--green); box-shadow:0 0 6px var(--green); transform:translateX(-50%); transition:left 0.2s ease; }
+  .angle-limits { display:flex; justify-content:space-between; margin-top:6px; font-size:10px; color:var(--muted); }
+  .angle-slider-wrap { width:100%; margin-top:14px; }
+  .angle-slider-wrap label { font-size:10px; color:var(--muted); letter-spacing:2px; display:block; margin-bottom:6px; }
+  input[type=range] { width:100%; appearance:none; background:var(--border); height:3px; outline:none; cursor:pointer; }
+  input[type=range]::-webkit-slider-thumb { appearance:none; width:14px; height:14px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); cursor:pointer; }
+  input[type=range]:disabled { opacity:0.3; cursor:not-allowed; }
+
+  /* LOG */
+  .panel-log { grid-column:3/4; grid-row:2/3; display:flex; flex-direction:column; }
+  #log { flex:1; overflow-y:auto; font-size:11px; line-height:1.8; color:var(--muted); }
+  #log::-webkit-scrollbar { width:4px; }
+  #log::-webkit-scrollbar-thumb { background:var(--border); }
+  .log-entry { padding:2px 0; border-bottom:1px solid var(--bg3); }
+  .log-entry .ts { color:#2a3a2a; margin-right:8px; }
+  .log-entry.friend { color:var(--green-mid); }
+  .log-entry.enemy  { color:var(--red); }
+  .log-entry.mode   { color:var(--yellow); }
+  .log-entry.angle  { color:#3a5a3a; }
+  .log-entry.surv   { color:var(--blue); }
+  .log-entry.test   { color:var(--cyan); }
+  .log-entry.aco    { color:var(--green); }
+  .log-entry.cmd    { color:#885500; }
+  .log-entry.system { color:var(--muted); }
+
+  #no-serial { position:fixed; inset:0; background:rgba(0,0,0,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; gap:16px; z-index:200; }
+  #no-serial p { color:var(--red); font-size:14px; letter-spacing:2px; text-align:center; line-height:2; }
+
+  @media (max-width:700px) {
+    .grid { grid-template-columns:1fr 1fr; grid-template-rows:auto; height:auto; min-height:calc(100vh - 53px); }
+    .panel-radar { grid-column:1/3; }
+    .panel-iff   { grid-column:1/2; }
+    .panel-mode  { grid-column:2/3; }
+    .panel-angle { grid-column:1/2; }
+    .panel-log   { grid-column:2/3; }
+    .angle-display { font-size:40px; }
+    .iff-result { font-size:28px; }
+    .iff-dist   { font-size:22px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="no-serial"><p>WEB SERIAL API NOT SUPPORTED<br>OPEN IN CHROME OR EDGE</p></div>
+
+<header>
+  <div class="logo">TBAS<span>TACTICAL BATTLEFIELD AWARENESS SUITE</span></div>
+  <div class="header-right">
+    <div class="status-dot" id="status-dot"></div>
+    <button id="connect-btn" onclick="connectSerial()">CONNECT</button>
+  </div>
+</header>
+
+<div class="grid">
+
+  <div class="panel panel-radar">
+    <div class="panel-label">RADAR / BEARING</div>
+    <canvas id="radar-canvas"></canvas>
+  </div>
+
+  <div class="panel panel-iff">
+    <div class="panel-label">IFF STATUS</div>
+    <div class="iff-result idle" id="iff-result">STANDBY</div>
+    <div class="iff-dist" id="iff-dist"></div>
+    <div class="iff-counter" id="iff-counter">COUNTER: 0</div>
+    <div class="iff-bar"><div class="iff-bar-fill" id="iff-bar"></div></div>
+    <div class="status-line" id="status-line"></div>
+  </div>
+
+  <div class="panel panel-mode">
+    <div class="panel-label">SYSTEM MODE</div>
+    <div class="mode-display manual" id="mode-display">MANUAL</div>
+    <div class="tx-mode friend" id="tx-mode">TX: FRIEND</div>
+    <div class="controls">
+      <button class="ctrl-btn active-manual" id="btn-manual"    onclick="sendCmd('MODE:MANUAL')" disabled>MANUAL</button>
+      <button class="ctrl-btn"              id="btn-surv"       onclick="sendCmd('MODE:SURV')"   disabled>SURV</button>
+      <button class="ctrl-btn"              id="btn-test"       onclick="sendCmd('MODE:TEST')"   disabled>TEST</button>
+      <button class="ctrl-btn"              id="btn-aco"        onclick="sendCmd('MODE:ACO')"    disabled>ACOUSTIC</button>
+      <button class="ctrl-btn active-friend" id="btn-tx-friend" onclick="sendCmd('TX:FRIEND')"   disabled>TX FRIEND</button>
+      <button class="ctrl-btn"              id="btn-tx-enemy"   onclick="sendCmd('TX:ENEMY')"    disabled>TX ENEMY</button>
+    </div>
+  </div>
+
+  <div class="panel panel-angle">
+    <div class="panel-label">SERVO BEARING</div>
+    <div>
+      <span class="angle-display" id="angle-display">090</span>
+      <span class="angle-unit">°</span>
+    </div>
+    <div class="angle-bar-wrap">
+      <div class="angle-track"><div class="angle-needle" id="angle-needle" style="left:50%"></div></div>
+      <div class="angle-limits"><span>25°</span><span>155°</span></div>
+    </div>
+    <div class="angle-slider-wrap">
+      <label>MANUAL ANGLE CONTROL</label>
+      <input type="range" id="angle-slider" min="25" max="155" value="90"
+             disabled oninput="onAngleSlider(this.value)" onchange="sendAngle(this.value)">
+    </div>
+  </div>
+
+  <div class="panel panel-log">
+    <div class="panel-label">EVENT LOG</div>
+    <div id="log"></div>
+  </div>
+
+</div>
+
+<script>
+const SERVO_MIN=25, SERVO_MAX=155;
+const STORAGE_KEY='tbas-web-state-v1';
+let port=null, writer=null, readerTask=null, reconnectTimer=null;
+let heartbeatTimer=null, staleTimer=null, sliderSendTimer=null;
+let iffCounter=0, currentAngle=90;
+let currentMode='MANUAL';
+let currentTX='FRIEND';
+let sweepActive=false;
+let detections=[];
+
+const state={
+  mode:'MANUAL',
+  tx:'FRIEND',
+  angle:90,
+  connected:false,
+  lastSeen:'',
+  lastCommandAt:0
+};
+
+function loadState(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    if(saved && typeof saved==='object'){
+      if(saved.mode) state.mode=saved.mode;
+      if(saved.tx) state.tx=saved.tx;
+      if(Number.isFinite(saved.angle)) state.angle=saved.angle;
+      if(saved.lastSeen) state.lastSeen=saved.lastSeen;
+    }
+  }catch(e){}
+}
+
+function persistState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      mode: state.mode,
+      tx: state.tx,
+      angle: state.angle,
+      lastSeen: state.lastSeen
+    }));
+  }catch(e){}
+}
+
+function pause(ms){
+  return new Promise(resolve=>setTimeout(resolve, ms));
+}
+
+function touchLink(){
+  state.lastSeen=Date.now();
+  persistState();
+  clearTimeout(staleTimer);
+  staleTimer=setTimeout(()=>{
+    if(writer && Date.now()-state.lastSeen>12000){
+      handleDisconnect('LINK STALE');
+    }
+  },12500);
+}
+
+function setConnectionUi(connected){
+  state.connected=connected;
+  const button=document.getElementById('connect-btn');
+  const dot=document.getElementById('status-dot');
+  button.textContent=connected ? 'DISCONNECT' : 'CONNECT';
+  button.classList.toggle('connected', connected);
+  dot.classList.toggle('active', connected);
+  if(!connected){
+    updateStatusLine('LINK OFFLINE');
+  }
+}
+
+function closeCurrentReader(){
+  if(readerTask && typeof readerTask.cancel==='function'){
+    try{ readerTask.cancel(); }catch(e){}
+  }
+  readerTask=null;
+}
+
+function queueReconnect(){
+  if(reconnectTimer) return;
+  reconnectTimer=setTimeout(async()=>{
+    reconnectTimer=null;
+    if(writer || state.connected) return;
+    const reconnected=await tryAutoReconnect();
+    if(!reconnected) queueReconnect();
+  },3000);
+}
+
+async function tryAutoReconnect(){
+  if(!('serial' in navigator)) return false;
+  try{
+    const ports=await navigator.serial.getPorts();
+    if(!ports.length) return false;
+    for(const candidate of ports){
+      try{
+        await openPort(candidate, true);
+        addLog('AUTO RECONNECTED','system');
+        return true;
+      }catch(e){}
+    }
+  }catch(e){}
+  return false;
+}
+
+function syncUiFromState(){
+  setMode(state.mode, false);
+  setTX(state.tx, false);
+  updateAngle(state.angle, false);
+  updateModeButtons();
+  updateTXButtons();
+  enableControls(!!writer);
+  updateStatusLine('RESTORING LAST SETTINGS');
+}
+
+const canvas=document.getElementById('radar-canvas');
+const ctx=canvas.getContext('2d');
+
+function drawRadar() {
+  const size=canvas.offsetWidth; canvas.width=size; canvas.height=size;
+  const W=size,H=size,cx=W/2,cy=H/2,r=Math.min(W,H)/2-10;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#050a05'; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+  [0.25,0.5,0.75,1].forEach(f=>{ ctx.beginPath(); ctx.arc(cx,cy,r*f,0,Math.PI*2); ctx.strokeStyle='#0d1f0d'; ctx.lineWidth=1; ctx.stroke(); });
+  ctx.strokeStyle='#0d1f0d'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cx-r,cy); ctx.lineTo(cx+r,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,cy-r); ctx.lineTo(cx,cy+r); ctx.stroke();
+  const a1=(SERVO_MIN-90)*Math.PI/180-Math.PI/2, a2=(SERVO_MAX-90)*Math.PI/180-Math.PI/2;
+  ctx.beginPath(); ctx.arc(cx,cy,r*0.85,a1,a2); ctx.strokeStyle='#1a2a1a'; ctx.lineWidth=6; ctx.stroke();
+  const sweepRad=(currentAngle-90)*Math.PI/180-Math.PI/2;
+  for(let i=0;i<30;i++){const ta=sweepRad-(i*0.04); ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r*0.85,ta,ta+0.04); ctx.lineTo(cx,cy); ctx.fillStyle=`rgba(0,255,136,${(30-i)/30*0.15})`; ctx.fill();}
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(sweepRad)*r*0.85,cy+Math.sin(sweepRad)*r*0.85); ctx.strokeStyle='rgba(0,255,136,0.8)'; ctx.lineWidth=1.5; ctx.stroke();
+  detections.forEach(d=>{
+    const age=(Date.now()-d.time)/3000; if(age>1)return;
+    const da=(d.angle-90)*Math.PI/180-Math.PI/2, dr=r*0.7;
+    const dx=cx+Math.cos(da)*dr, dy=cy+Math.sin(da)*dr;
+    const color=d.type==='FRIEND'?'#00ff88':'#ff3344';
+    ctx.beginPath(); ctx.arc(dx,dy,5*(1-age*0.5),0,Math.PI*2); ctx.fillStyle=color; ctx.globalAlpha=1-age; ctx.fill(); ctx.globalAlpha=1;
+    ctx.beginPath(); ctx.arc(dx,dy,5+age*12,0,Math.PI*2); ctx.strokeStyle=color; ctx.lineWidth=1; ctx.globalAlpha=(1-age)*0.5; ctx.stroke(); ctx.globalAlpha=1;
+  });
+  ctx.beginPath(); ctx.arc(cx,cy,3,0,Math.PI*2); ctx.fillStyle='#00ff88'; ctx.fill();
+  ctx.fillStyle='#2a4a2a'; ctx.font='10px Courier New';
+  ctx.textAlign='center'; ctx.fillText('N',cx,cy-r+14); ctx.fillText('S',cx,cy+r-4);
+  ctx.textAlign='left'; ctx.fillText('E',cx+r-14,cy+4);
+  ctx.textAlign='right'; ctx.fillText('W',cx-r+14,cy+4);
+  const curRad=(currentAngle-90)*Math.PI/180-Math.PI/2;
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(curRad)*r*0.9,cy+Math.sin(curRad)*r*0.9);
+  ctx.strokeStyle='rgba(255,204,0,0.6)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+}
+
+(function loop(){ detections=detections.filter(d=>Date.now()-d.time<4000); drawRadar(); requestAnimationFrame(loop); })();
+
+async function connectSerial(){
+  if(!('serial' in navigator)){ document.getElementById('no-serial').style.display='flex'; return; }
+  if(writer && port){
+    try{ closeCurrentReader(); await writer.releaseLock(); }catch(e){}
+    try{ await port.close(); }catch(e){}
+    writer=null;
+    port=null;
+    setConnectionUi(false);
+    enableControls(false);
+    addLog('DISCONNECTED','system');
+    return;
+  }
+  try{
+    port=await navigator.serial.requestPort();
+    await openPort(port, false);
+  }catch(e){ if(e.name!=='NotAllowedError') addLog('CONNECTION FAILED: '+e.message,'enemy'); }
+}
+
+async function openPort(selectedPort, isAutoReconnect){
+  closeCurrentReader();
+  try{ await selectedPort.open({baudRate:9600}); }
+  catch(e){ throw e; }
+
+  const enc=new TextEncoderStream();
+  enc.readable.pipeTo(selectedPort.writable).catch(()=>{});
+  writer=enc.writable.getWriter();
+  port=selectedPort;
+  state.connected=true;
+  setConnectionUi(true);
+  enableControls(true);
+  addLog(isAutoReconnect ? 'SERIAL RECONNECTED' : 'SERIAL CONNECTED','system');
+  touchLink();
+  await replaySavedState();
+  startHeartbeat();
+  readerTask=readSerial();
+}
+
+async function readSerial(){
+  if(!port) return;
+  const dec=new TextDecoderStream();
+  const pipePromise=port.readable.pipeTo(dec.writable).catch(()=>{});
+  const reader=dec.readable.getReader();
+  readerTask=reader;
+  let buf='';
+  while(true){ 
+    try{ 
+      const{value,done}=await reader.read(); 
+      if(done)break; 
+      buf+=value; 
+      const lines=buf.split(/\r?\n/); 
+      buf=lines.pop(); 
+      lines.forEach(l=>parseLine(l.trim())); 
+    }catch(e){
+      handleDisconnect('DISCONNECTED');
+      break;
+    } 
+  }
+  try{ await pipePromise; }catch(e){}
+}
+
+async function sendCmd(cmd){
+  if(!writer){
+    addLog('OFFLINE CMD BLOCKED: '+cmd,'system');
+    return;
+  }
+  try{ await writer.write(cmd+'\n'); addLog('→ '+cmd,'cmd'); }
+  catch(e){ addLog('SEND FAILED','enemy'); }
+}
+
+function startHeartbeat(){
+  stopHeartbeat();
+  heartbeatTimer=setInterval(async()=>{
+    if(!writer) return;
+    try{
+      await writer.write('PING\n');
+    }catch(e){
+      handleDisconnect('HEARTBEAT FAILED');
+    }
+  },4000);
+}
+
+function stopHeartbeat(){
+  if(heartbeatTimer){
+    clearInterval(heartbeatTimer);
+    heartbeatTimer=null;
+  }
+  if(staleTimer){
+    clearTimeout(staleTimer);
+    staleTimer=null;
+  }
+}
+
+async function replaySavedState(){
+  updateStatusLine('RESTORING LAST SETTINGS');
+  const commands=['TX:'+state.tx,'MODE:'+state.mode];
+  if(state.mode==='MANUAL') commands.push('ANGLE:'+state.angle);
+  for(const cmd of commands){
+    await writer.write(cmd+'\n');
+    addLog('↻ '+cmd,'cmd');
+    await pause(60);
+  }
+  updateStatusLine('LINK ONLINE');
+}
+
+function handleDisconnect(message){
+  state.connected=false;
+  stopHeartbeat();
+  setConnectionUi(false);
+  enableControls(false);
+  addLog(message,'system');
+  try{ writer && writer.releaseLock(); }catch(e){}
+  writer=null;
+  port=null;
+  closeCurrentReader();
+  queueReconnect();
+}
+
+function onAngleSlider(val){
+  updateAngle(parseInt(val,10), false);
+  if(currentMode==='MANUAL' && writer){
+    clearTimeout(sliderSendTimer);
+    sliderSendTimer=setTimeout(()=>sendAngle(val),60);
+  }
+}
+function sendAngle(val){
+  state.angle=parseInt(val,10);
+  persistState();
+  sendCmd('ANGLE:'+val);
+}
+
+function enableControls(on){
+  ['btn-manual','btn-surv','btn-test','btn-aco','btn-tx-friend','btn-tx-enemy','angle-slider'].forEach(id=>{
+    document.getElementById(id).disabled=!on;
+  });
+}
+
+function parseLine(line){
+  if(!line) return;
+  touchLink();
+
+  // ─── ANGLE UPDATES ───
+  if(line.startsWith('Angle:')){
+    const a=parseInt(line.split(':')[1]);
+    if(!isNaN(a)){ updateAngle(a); if(currentMode==='MANUAL') document.getElementById('angle-slider').value=a; }
+    addLog(line,'angle'); return;
+  }
+
+  // ─── SURVEILLANCE ───
+  if(line.includes('SURV TARGET:') || line.includes('SWEEP TO:')){
+    const a=parseInt(line.split(':')[1]);
+    if(!isNaN(a)){ smoothSweepTo(a); sweepActive=true; }
+    addLog(line,'surv'); return;
+  }
+
+  // ─── ACOUSTIC DATA ───
+  if(line.includes('ACO ANGLE:')){
+    const a=parseInt(line.split(':')[1]);
+    if(!isNaN(a)){ updateAngle(a); }
+    addLog(line,'aco'); return;
+  }
+
+  if(line.includes('TDOA=')){
+    addLog(line,'test'); return;
+  }
+
+  if(line.includes('DISCARDED')){
+    addLog(line,'system'); return;
+  }
+
+  if(line.includes('MIC') && line.includes('only')){
+    addLog(line,'test'); return;
+  }
+
+  // ─── IFF RESULTS ───
+  if(line.includes('IFF: FRIEND')){
+    const distMatch=line.match(/DIST:(\d+)cm/);
+    const dist=distMatch ? distMatch[1]+'cm' : '';
+    showIFF('FRIEND', dist);
+    detections.push({angle:currentAngle, type:'FRIEND', time:Date.now()});
+    addLog(line, 'friend'); return;
+  }
+
+  if(line.includes('IFF: ENEMY')){
+    const distMatch=line.match(/DIST:(\d+)cm/);
+    const dist=distMatch ? distMatch[1]+'cm' : '';
+    showIFF('ENEMY', dist);
+    detections.push({angle:currentAngle, type:'ENEMY', time:Date.now()});
+    addLog(line, 'enemy'); return;
+  }
+
+  if(line.includes('IFF: NO RESPONSE')){
+    showIFF('NO_RESP', '');
+    addLog(line, 'system'); return;
+  }
+
+  // ─── MODE CHANGES ───
+  if(line.includes('MODE: MANUAL')){
+    setMode('MANUAL');
+    sweepActive=false;
+    state.mode='MANUAL';
+    persistState();
+    updateModeButtons(); 
+    addLog(line,'mode'); return;
+  }
+
+  if(line.includes('MODE: SURVEILLANCE')){
+    setMode('SURVEILLANCE');
+    sweepActive=true;
+    state.mode='SURVEILLANCE';
+    persistState();
+    updateModeButtons();
+    addLog(line,'mode'); return;
+  }
+
+  if(line.includes('MODE: SERVO_TEST')){
+    setMode('SERVO_TEST');
+    sweepActive=false;
+    state.mode='SERVO_TEST';
+    persistState();
+    updateModeButtons();
+    addLog(line,'mode'); return;
+  }
+
+  if(line.includes('MODE: ACOUSTIC')){
+    setMode('ACOUSTIC');
+    sweepActive=false;
+    state.mode='ACOUSTIC';
+    persistState();
+    updateModeButtons();
+    addLog(line,'mode'); return;
+  }
+
+  if(line.includes('TBAS SERVO TEST READY')){
+    updateStatusLine('SERVO TEST READY');
+    addLog(line,'test'); return;
+  }
+
+  if(line.includes('ACO READY')){
+    updateStatusLine('ACO READY');
+    addLog(line,'aco'); return;
+  }
+
+  // ─── TX MODE ───
+  if(line.includes('TX: FRIEND')){
+    setTX('FRIEND');
+    state.tx='FRIEND';
+    persistState();
+    updateTXButtons();
+    addLog(line,'friend'); return;
+  }
+
+  if(line.includes('TX: ENEMY')){
+    setTX('ENEMY');
+    state.tx='ENEMY';
+    persistState();
+    updateTXButtons();
+    addLog(line,'enemy'); return;
+  }
+
+  // ─── SYSTEM STATES ───
+  if(line.includes('LOCKOUT')){
+    updateStatusLine('LOCKOUT');
+    addLog(line,'system'); return;
+  }
+
+  if(line.includes('TBAS READY')){
+    addLog(line,'system'); return;
+  }
+
+  if(line.startsWith('STATUS:')){
+    const modeMatch=line.match(/MODE=([A-Z_]+)/);
+    const txMatch=line.match(/TX=([A-Z]+)/);
+    const angleMatch=line.match(/ANGLE=(\d+)/);
+    if(modeMatch) setMode(modeMatch[1]);
+    if(txMatch) setTX(txMatch[1]);
+    if(angleMatch && !isNaN(parseInt(angleMatch[1]))){
+      const parsedAngle=parseInt(angleMatch[1]);
+      updateAngle(parsedAngle, false);
+      if(currentMode==='MANUAL') document.getElementById('angle-slider').value=parsedAngle;
+    }
+    updateStatusLine('ONLINE');
+    addLog(line,'system');
+    return;
+  }
+
+  if(line==='PONG'){
+    updateStatusLine('ONLINE');
+    addLog(line,'system');
+    return;
+  }
+
+  // Catch-all
+  addLog(line,'system');
+}
+
+let sweepTimer;
+function smoothSweepTo(target){
+  clearTimeout(sweepTimer);
+  const step=()=>{ 
+    if(currentAngle===target)return; 
+    currentAngle+=currentAngle<target?1:-1; 
+    updateAngle(currentAngle, false); 
+    sweepTimer=setTimeout(step,20); 
+  };
+  step();
+}
+
+function updateAngle(a, save=true){
+  currentAngle=a;
+  state.angle=a;
+  if(save) persistState();
+  document.getElementById('angle-display').textContent=String(a).padStart(3,'0');
+  const pct=(a-SERVO_MIN)/(SERVO_MAX-SERVO_MIN)*100;
+  document.getElementById('angle-needle').style.left=pct+'%';
+}
+
+let iffTimer;
+function showIFF(type, dist=''){
+  if(type!=='NO_RESP') iffCounter++;
+  const el=document.getElementById('iff-result');
+  const distEl=document.getElementById('iff-dist');
+  const bar=document.getElementById('iff-bar');
+  
+  el.textContent=type;
+  if(type==='FRIEND'){
+    el.className='iff-result friend';
+    distEl.style.color='var(--green)';
+    distEl.style.textShadow='0 0 12px var(--green)';
+    bar.style.background='var(--green)';
+  }else if(type==='ENEMY'){
+    el.className='iff-result enemy';
+    distEl.style.color='var(--red)';
+    distEl.style.textShadow='0 0 12px var(--red)';
+    bar.style.background='var(--red)';
+  }else{
+    el.className='iff-result idle';
+    distEl.style.textShadow='none';
+    bar.style.background='var(--muted)';
+  }
+  
+  distEl.textContent=dist;
+  document.getElementById('iff-counter').textContent='COUNTER: '+iffCounter;
+  bar.style.width='100%';
+  clearTimeout(iffTimer);
+  iffTimer=setTimeout(()=>{
+    el.textContent='STANDBY'; 
+    el.className='iff-result idle';
+    distEl.textContent=''; 
+    distEl.style.textShadow='none';
+    bar.style.width='0%';
+    updateStatusLine('');
+  },3000);
+}
+
+function setMode(m){
+  currentMode=m;
+  state.mode=m;
+  persistState();
+  const el=document.getElementById('mode-display'); 
+  el.textContent=m; 
+  el.className='mode-display '+m.toLowerCase();
+  document.getElementById('angle-slider').disabled=(m!=='MANUAL');
+  if(m!=='MANUAL') clearTimeout(sliderSendTimer);
+}
+
+function setTX(t){ 
+  currentTX=t;
+  state.tx=t;
+  persistState();
+  const el=document.getElementById('tx-mode'); 
+  el.textContent='TX: '+t; 
+  el.className='tx-mode '+t.toLowerCase(); 
+}
+
+function updateStatusLine(status){
+  currentStatus=status;
+  document.getElementById('status-line').textContent=status;
+}
+
+function updateModeButtons(){
+  document.getElementById('btn-manual').className='ctrl-btn '+(currentMode==='MANUAL'?'active-manual':'');
+  document.getElementById('btn-surv').className='ctrl-btn '+(currentMode==='SURVEILLANCE'?'active-surv':'');
+  document.getElementById('btn-test').className='ctrl-btn '+(currentMode==='SERVO_TEST'?'active-test':'');
+  document.getElementById('btn-aco').className='ctrl-btn '+(currentMode==='ACOUSTIC'?'active-aco':'');
+}
+
+function updateTXButtons(){
+  const f=currentTX==='FRIEND';
+  document.getElementById('btn-tx-friend').className='ctrl-btn '+(f?'active-friend':'');
+  document.getElementById('btn-tx-enemy').className='ctrl-btn '+(!f?'active-enemy':'');
+}
+
+function addLog(msg,cls){
+  const log=document.getElementById('log');
+  const now=new Date();
+  const ts=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');
+  const div=document.createElement('div'); 
+  div.className='log-entry '+cls;
+  div.innerHTML=`<span class="ts">${ts}</span>${msg}`;
+  log.appendChild(div); 
+  if(log.children.length>100)log.removeChild(log.firstChild); 
+  log.scrollTop=log.scrollHeight;
+}
+
+window.onload=()=>{ 
+  if(!('serial' in navigator))document.getElementById('no-serial').style.display='flex'; 
+  loadState();
+  currentMode=state.mode;
+  currentTX=state.tx;
+  currentAngle=state.angle;
+  syncUiFromState();
+  persistState();
+  if('serial' in navigator){
+    navigator.serial.addEventListener('disconnect',()=>handleDisconnect('DEVICE DISCONNECTED'));
+    navigator.serial.addEventListener('connect',()=>queueReconnect());
+  }
+  window.addEventListener('beforeunload',()=>{ stopHeartbeat(); try{ writer && writer.releaseLock(); }catch(e){} });
+  addLog('TBAS WEB INTERFACE LOADED','system'); 
+  addLog('LAST STATE: '+state.mode+' / '+state.tx+' / '+String(state.angle).padStart(3,'0'),'system');
+  addLog('CLICK CONNECT TO BEGIN','system'); 
+};
+</script>
+</body>
+</html>

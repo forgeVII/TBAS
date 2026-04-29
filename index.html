@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TBAS — Tactical Battlefield Awareness Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080b08;
+  --bg2: #0c100c;
+  --bg3: #101510;
+  --border: #1a2a1a;
+  --green: #00ff88;
+  --green-dim: #003322;
+  --green-mid: #00bb66;
+  --muted: #3a5a3a;
+  --text: #c8dcc8;
+  --red: #ff4455;
+  --yellow: #ffcc00;
+  --blue: #44aaff;
+  --mono: 'Share Tech Mono', monospace;
+  --sans: 'Rajdhani', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* Scanline overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 3px,
+    rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px
+  );
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* ── HEADER ── */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(8,11,8,0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--green);
+  text-shadow: 0 0 12px rgba(0,255,136,0.4);
+  letter-spacing: 3px;
+}
+
+.logo span {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 2px;
+  display: block;
+  margin-top: 1px;
+}
+
+nav {
+  display: flex;
+  gap: 24px;
+}
+
+nav a {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 2px;
+  transition: color 0.2s;
+}
+
+nav a:hover { color: var(--green); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 40px;
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 100%, rgba(0,255,136,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 20% 20%, rgba(0,255,136,0.03) 0%, transparent 60%);
+}
+
+.hero-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--green-mid);
+  letter-spacing: 4px;
+  margin-bottom: 20px;
+  opacity: 0;
+  animation: fadeUp 0.6s ease 0.2s forwards;
+}
+
+.hero-title {
+  font-family: var(--mono);
+  font-size: clamp(32px, 6vw, 64px);
+  color: var(--green);
+  text-shadow: 0 0 40px rgba(0,255,136,0.3), 0 0 80px rgba(0,255,136,0.1);
+  letter-spacing: 8px;
+  line-height: 1.1;
+  margin-bottom: 8px;
+  opacity: 0;
+  animation: fadeUp 0.6s ease 0.4s forwards;
+}
+
+.hero-sub {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 4px;
+  margin-bottom: 32px;
+  opacity: 0;
+  animation: fadeUp 0.6s ease 0.6s forwards;
+}
+
+.hero-desc {
+  max-width: 600px;
+  font-size: 17px;
+  color: var(--text);
+  font-weight: 400;
+  opacity: 0;
+  animation: fadeUp 0.6s ease 0.8s forwards;
+}
+
+.badges {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+  opacity: 0;
+  animation: fadeUp 0.6s ease 1s forwards;
+}
+
+.badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  background: var(--bg2);
+}
+
+.badge.green { border-color: var(--green-mid); color: var(--green); }
+.badge.yellow { border-color: #665500; color: var(--yellow); }
+.badge.blue { border-color: #224466; color: var(--blue); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── MAIN CONTENT ── */
+main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 60px 40px 120px;
+}
+
+/* ── SECTIONS ── */
+section {
+  margin-bottom: 72px;
+  padding-top: 16px;
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--green-mid);
+  letter-spacing: 2px;
+}
+
+h2 {
+  font-family: var(--sans);
+  font-size: 22px;
+  font-weight: 700;
+  color: #e8f4e8;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+h3 {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--green-mid);
+  letter-spacing: 2px;
+  margin: 32px 0 12px;
+  text-transform: uppercase;
+}
+
+p {
+  margin-bottom: 16px;
+  font-size: 16px;
+  color: var(--text);
+  font-weight: 400;
+}
+
+/* ── FORMULA BOX ── */
+.formula {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--green);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green-mid);
+  padding: 16px 20px;
+  margin: 20px 0;
+  letter-spacing: 1px;
+}
+
+/* ── TABLES ── */
+.table-wrap {
+  overflow-x: auto;
+  margin: 20px 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+th {
+  background: var(--bg3);
+  color: var(--green-mid);
+  text-align: left;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  letter-spacing: 2px;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+td {
+  padding: 9px 16px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: top;
+}
+
+tr:nth-child(even) td { background: rgba(255,255,255,0.01); }
+tr:hover td { background: rgba(0,255,136,0.02); }
+
+/* ── MODE CARDS ── */
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.mode-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.mode-card:hover { border-color: var(--muted); }
+
+.mode-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.mode-card.manual::before { background: var(--yellow); }
+.mode-card.surv::before { background: var(--blue); }
+.mode-card.test::before { background: #00ddff; }
+.mode-card.acoustic::before { background: var(--green); }
+
+.mode-name {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+
+.mode-card.manual .mode-name { color: var(--yellow); }
+.mode-card.surv .mode-name { color: var(--blue); }
+.mode-card.test .mode-name { color: #00ddff; }
+.mode-card.acoustic .mode-name { color: var(--green); }
+
+.mode-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+  font-family: var(--sans);
+}
+
+/* ── RGB INDICATORS ── */
+.rgb-grid {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.rgb-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+}
+
+.rgb-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rgb-dot.green { background: #00ff88; box-shadow: 0 0 8px #00ff88; }
+.rgb-dot.red { background: #ff4455; box-shadow: 0 0 8px #ff4455; }
+.rgb-dot.blue { background: #44aaff; box-shadow: 0 0 8px #44aaff; }
+.rgb-dot.yellow { background: #ffcc00; box-shadow: 0 0 8px #ffcc00; }
+.rgb-dot.magenta { background: #ff44ff; box-shadow: 0 0 8px #ff44ff; }
+.rgb-dot.cyan { background: #00ddff; box-shadow: 0 0 8px #00ddff; }
+
+.rgb-label {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  flex: 1;
+}
+
+.rgb-state {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  letter-spacing: 1px;
+}
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  padding: 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--green-mid);
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.8;
+  white-space: pre;
+}
+
+.code-block .comment { color: var(--muted); }
+.code-block .keyword { color: var(--yellow); }
+.code-block .value { color: var(--green); }
+
+/* ── CALLOUT ── */
+.callout {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--yellow);
+  background: var(--bg2);
+  padding: 16px 20px;
+  margin: 20px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.callout.green { border-left-color: var(--green-mid); }
+.callout.red { border-left-color: var(--red); }
+
+.callout strong {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--yellow);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.callout.green strong { color: var(--green-mid); }
+.callout.red strong { color: var(--red); }
+
+/* ── INTERFACE EMBED LINK ── */
+.interface-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  padding: 32px;
+  text-align: center;
+  margin: 24px 0;
+}
+
+.interface-box p {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.launch-btn {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: var(--green);
+  border: 1px solid var(--green-mid);
+  background: var(--green-dim);
+  padding: 12px 28px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.launch-btn:hover {
+  background: #005533;
+  box-shadow: 0 0 16px rgba(0,255,136,0.2);
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 40px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  header { padding: 0 20px; }
+  nav { display: none; }
+  main { padding: 40px 20px 80px; }
+  .hero { padding: 60px 20px; }
+  .hero-title { letter-spacing: 4px; }
+  footer { padding: 24px 20px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TBAS<span>TACTICAL BATTLEFIELD AWARENESS SUITE</span></div>
+  <nav>
+    <a href="#overview">OVERVIEW</a>
+    <a href="#modes">MODES</a>
+    <a href="#buttons">CONTROLS</a>
+    <a href="#iff">IFF</a>
+    <a href="#interface">WEB UI</a>
+    <a href="#wiring">WIRING</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="hero-tag">// PROJECT DOCUMENTATION</div>
+  <div class="hero-title">TBAS</div>
+  <div class="hero-sub">TACTICAL BATTLEFIELD AWARENESS SUITE</div>
+  <div class="hero-desc">
+    An Arduino Nano based embedded system for acoustic direction finding,
+    IFF classification, and real-time battlefield awareness via a browser-based interface.
+  </div>
+  <div class="badges">
+    <span class="badge green">ARDUINO NANO</span>
+    <span class="badge">TDOA ACOUSTICS</span>
+    <span class="badge yellow">DYNAMIC IFF</span>
+    <span class="badge blue">WEB SERIAL</span>
+    <span class="badge">OPEN SOURCE</span>
+  </div>
+</div>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2>System Overview</h2>
+    </div>
+    <p>
+      TBAS detects sound events using two electret microphones spaced 28 cm apart.
+      By measuring the Time Difference of Arrival (TDOA) between the two microphones,
+      the system calculates the angle of the incoming sound using physics of wave propagation.
+      A servo motor physically rotates toward the detected angle. A TSOP1838 IR receiver
+      mounted on the servo then performs an IFF (Identification Friend or Foe) check
+      using a dynamic rolling code protocol.
+    </p>
+    <p>
+      All data is streamed in real time to a browser-based web interface over USB serial.
+      The interface displays a live radar, IFF result, bearing angle, and event log.
+      No additional software, drivers, or server is required — only Chrome or Edge.
+    </p>
+
+    <h3>Signal Flow</h3>
+    <div class="code-block"><span class="comment">// TBAS signal chain</span>
+<span class="keyword">Sound Event</span>
+  → Electret Mics (x2, 28cm apart)
+  → LM393 Dual Comparator
+  → Arduino Hardware Interrupts (D2, D3)
+  → TDOA Calculation → asin() angle formula
+  → Servo Rotates to Angle (D12)
+  → TSOP1838 IR Receiver checks IFF (D4)
+  → IR LED sends rolling code response (D5)
+  → RGB LED local indicator (A3/A4/A5)
+  → Serial Output → Web Interface (Chrome)</div>
+  </section>
+
+  <!-- MODES -->
+  <section id="modes">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2>Operating Modes</h2>
+    </div>
+    <p>TBAS operates in four modes. Switch between them by holding both buttons simultaneously for more than 500ms — this cycles through modes in order.</p>
+
+    <div class="mode-grid">
+      <div class="mode-card manual">
+        <div class="mode-name">MANUAL</div>
+        <div class="mode-desc">Servo controlled directly by buttons. IFF check runs on button release.</div>
+      </div>
+      <div class="mode-card surv">
+        <div class="mode-name">SURVEILLANCE</div>
+        <div class="mode-desc">Servo sweeps to random positions. IFF checked twice at each stop.</div>
+      </div>
+      <div class="mode-card test">
+        <div class="mode-name">SERVO TEST</div>
+        <div class="mode-desc">TDOA values and angles printed to serial. Used during calibration.</div>
+      </div>
+      <div class="mode-card acoustic">
+        <div class="mode-name">ACOUSTIC</div>
+        <div class="mode-desc">Waits for sound, calculates angle, points servo, runs IFF. 5s lockout after detection.</div>
+      </div>
+    </div>
+
+    <h3>TDOA Formula</h3>
+    <p>Sound direction is calculated using the inverse sine of the time difference:</p>
+    <div class="formula">angle = asin( 343 × Δt / 0.28 ) × (180 / π) + 90°</div>
+    <p>
+      Where Δt is the time difference in seconds between the two microphone triggers.
+      The result maps to a servo angle between 25° and 155°, with 90° as dead center.
+      Any TDOA value exceeding 816 µs (the physical maximum at 28 cm spacing) is
+      discarded as a reflection or noise event.
+    </p>
+  </section>
+
+  <!-- BUTTON CONTROLS -->
+  <section id="buttons">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2>Button Controls</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Action</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Hold both buttons &gt;500ms</td><td>Cycle modes: Manual → Surveillance → Servo Test → Acoustic</td></tr>
+          <tr><td>Double click both buttons</td><td>Toggle Friend / Enemy transmit mode</td></tr>
+          <tr><td>Hold Left (Manual mode)</td><td>Rotate servo left</td></tr>
+          <tr><td>Hold Right (Manual mode)</td><td>Rotate servo right</td></tr>
+          <tr><td>Release buttons (Manual)</td><td>Trigger IFF check at current position</td></tr>
+          <tr><td>Release buttons (Acoustic, BTN state)</td><td>Trigger IFF check + 5 second lockout</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>RGB Status Indicators</h3>
+    <div class="rgb-grid">
+      <div class="rgb-item"><div class="rgb-dot magenta"></div><div class="rgb-label">Manual mode active</div><div class="rgb-state">SOLID</div></div>
+      <div class="rgb-item"><div class="rgb-dot blue"></div><div class="rgb-label">Surveillance mode active</div><div class="rgb-state">SOLID</div></div>
+      <div class="rgb-item"><div class="rgb-dot cyan"></div><div class="rgb-label">Acoustic mode — waiting</div><div class="rgb-state">SLOW BLINK</div></div>
+      <div class="rgb-item"><div class="rgb-dot yellow"></div><div class="rgb-label">Mode changed</div><div class="rgb-state">BLINK ×2</div></div>
+      <div class="rgb-item"><div class="rgb-dot green"></div><div class="rgb-label">Friend TX mode selected</div><div class="rgb-state">BLINK ×2</div></div>
+      <div class="rgb-item"><div class="rgb-dot red"></div><div class="rgb-label">Enemy TX mode selected</div><div class="rgb-state">BLINK ×2</div></div>
+      <div class="rgb-item"><div class="rgb-dot green"></div><div class="rgb-label">IFF: Friend detected</div><div class="rgb-state">SOLID 3s</div></div>
+      <div class="rgb-item"><div class="rgb-dot red"></div><div class="rgb-label">IFF: Enemy detected</div><div class="rgb-state">SOLID 3s</div></div>
+      <div class="rgb-item"><div class="rgb-dot blue"></div><div class="rgb-label">IFF: No response</div><div class="rgb-state">SOLID 3s</div></div>
+      <div class="rgb-item"><div class="rgb-dot cyan"></div><div class="rgb-label">Acoustic lockout active</div><div class="rgb-state">BLINK 5s</div></div>
+    </div>
+  </section>
+
+  <!-- IFF -->
+  <section id="iff">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2>IFF System</h2>
+    </div>
+    <p>
+      IFF uses NEC protocol IR communication at 38 kHz. Instead of a fixed static code
+      which could be intercepted and replayed, TBAS uses a dynamic rolling code.
+    </p>
+
+    <div class="formula">code = ( KEY × counter + 5 ) mod 256</div>
+
+    <p>
+      Both units share the same KEY (7) and maintain a synchronized counter.
+      The counter increments on every successful Friend exchange, so the code
+      changes every cycle. An intercepted code cannot be replayed because the
+      expected code has already advanced.
+    </p>
+
+    <div class="callout green">
+      <strong>// SECURITY NOTE</strong>
+      Enemy TX mode deliberately sends an incorrect code — used to simulate an adversary
+      and verify the system correctly classifies unknown IR sources as ENEMY.
+    </div>
+
+    <h3>IFF Results</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Result</th><th>Condition</th><th>RGB</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>FRIEND</td><td>Received code matches expected rolling code</td><td>Green solid</td></tr>
+          <tr><td>ENEMY</td><td>Received code present but wrong</td><td>Red solid</td></tr>
+          <tr><td>NO RESPONSE</td><td>No valid IR within timeout window</td><td>Blue solid</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <strong>// TSOP MOUNTING NOTE</strong>
+      The TSOP1838 is mounted in reverse orientation on the servo.
+      Real detection angle = 180° − servo angle. The firmware and web interface
+      compensate automatically — all reported angles are corrected real-world angles.
+    </div>
+  </section>
+
+  <!-- WEB INTERFACE -->
+  <section id="interface">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2>Web Interface</h2>
+    </div>
+    <p>
+      The TBAS web interface connects directly to the Arduino over USB using the
+      Web Serial API — no drivers, no server, no installation. Open in Chrome or Edge,
+      click Connect, select the Arduino COM port, and the interface is live.
+    </p>
+
+    <div class="callout red">
+      <strong>// BROWSER REQUIREMENT</strong>
+      Web Serial API requires Chrome or Edge. Firefox and Safari are not supported.
+      On mobile, use a desktop browser or Chrome for Android with OTG cable.
+    </div>
+
+    <div class="interface-box">
+      <p>// LAUNCH TBAS WEB INTERFACE</p>
+      <a href="tbas_interface.html" class="launch-btn" target="_blank">OPEN INTERFACE →</a>
+    </div>
+
+    <h3>Interface Panels</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Panel</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>RADAR / BEARING</td><td>Animated radar showing servo sweep and color-coded detection markers</td></tr>
+          <tr><td>IFF STATUS</td><td>Large IFF result display with distance, rolling code counter, progress bar</td></tr>
+          <tr><td>SYSTEM MODE</td><td>Current mode display with buttons to switch mode and TX mode</td></tr>
+          <tr><td>SERVO BEARING</td><td>Numeric angle with needle indicator and manual angle slider</td></tr>
+          <tr><td>EVENT LOG</td><td>Timestamped color-coded log of all serial events</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Serial Commands</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Command</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>PING</td><td>Heartbeat — Arduino responds PONG</td></tr>
+          <tr><td>STATUS</td><td>Request full status dump</td></tr>
+          <tr><td>MODE:MANUAL</td><td>Switch to Manual mode</td></tr>
+          <tr><td>MODE:SURV</td><td>Switch to Surveillance mode</td></tr>
+          <tr><td>MODE:ACO</td><td>Switch to Acoustic mode</td></tr>
+          <tr><td>MODE:TEST</td><td>Switch to Servo Test mode</td></tr>
+          <tr><td>TX:FRIEND</td><td>Set Friend transmit mode</td></tr>
+          <tr><td>TX:ENEMY</td><td>Set Enemy transmit mode</td></tr>
+          <tr><td>ANGLE:XXX</td><td>Move servo to angle (Manual mode only)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- WIRING -->
+  <section id="wiring">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2>Wiring Reference</h2>
+    </div>
+
+    <h3>Pin Map</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Pin</th><th>Function</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>D2</td><td>Mic 1 interrupt — RISING edge</td></tr>
+          <tr><td>D3</td><td>Mic 2 interrupt — RISING edge</td></tr>
+          <tr><td>D4</td><td>TSOP1838 IR receiver</td></tr>
+          <tr><td>D5</td><td>IR LED transmit</td></tr>
+          <tr><td>D8</td><td>Button Left (INPUT_PULLUP)</td></tr>
+          <tr><td>D9</td><td>Button Right (INPUT_PULLUP)</td></tr>
+          <tr><td>D10</td><td>TM1637 CLK (optional)</td></tr>
+          <tr><td>D11</td><td>TM1637 DIO (optional)</td></tr>
+          <tr><td>D12</td><td>Servo PWM</td></tr>
+          <tr><td>A3</td><td>RGB Red — 220Ω series</td></tr>
+          <tr><td>A4</td><td>RGB Green — 220Ω series</td></tr>
+          <tr><td>A5</td><td>RGB Blue — 220Ω series</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Key Wiring Notes</h3>
+    <div class="callout green">
+      <strong>// MIC CIRCUIT — IMPORTANT</strong>
+      Mic (+) connects to IN+ (Pin 3) of LM393. Pot wiper connects to IN− (Pin 2).
+      This is opposite to typical comparator tutorials. Interrupt must be RISING not FALLING.
+      One 10kΩ bias resistor from 5V to Mic(+). One 10kΩ pullup from OUT to 5V.
+      Two independent pots share a common voltage divider (10kΩ–10kΩ from 5V to GND).
+    </div>
+
+    <div class="callout">
+      <strong>// POWER NOTE</strong>
+      Servo draws significant current on movement. Use a 100µF electrolytic capacitor
+      across servo power pins. Power from laptop USB is sufficient for lab use.
+      For field deployment, use a power bank — do not use phone OTG directly with servo.
+    </div>
+
+    <div class="callout">
+      <strong>// TSOP1838 PINOUT</strong>
+      With flat face toward you, pins left to right: OUT — GND — VCC.
+      No resistor needed on signal pin. 100nF decoupling cap recommended between VCC and GND.
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  TBAS — Tactical Battlefield Awareness Suite &nbsp;|&nbsp;
+  Built by Harish Chand &nbsp;|&nbsp;
+  B.Tech ECE, HNB Garhwal University &nbsp;|&nbsp;
+  <a href="https://forgevii.github.io/TBAS/" style="color:var(--muted);text-decoration:none;">GITHUB →</a>
+</footer>
+
+</body>
+</html>
