@@ -1,118 +1,63 @@
 # YouTube Video Details — Upload as Unlisted
 
-> Replace VIDEO_LINK placeholders with actual YouTube URLs after uploading.
-
 ---
 
-## Video 1: Acoustic Detection Demo
+## Video 1: Acoustic Test
 
-**Title:** TBAS — Acoustic Direction Finding with Arduino (Live Demo)
+**Title:** TBAS — Acoustic Direction Finding Test (Arduino TDOA System)
 
 **Description:**
 ```
-Live demo of TBAS (Tactical Battlefield Awareness Suite) — an Arduino Nano based acoustic direction finding system.
+Testing the acoustic detection system of TBAS (Tactical Battlefield Awareness Suite).
 
-Two electret microphones spaced 28cm apart detect sound. TDOA (Time Difference of Arrival) physics calculates the angle. A servo rotates toward the source. An IR system identifies friend or foe. A browser-based radar displays everything in real time.
-
-No GPS. No cameras. No complex processors. Just sound, math, and IR light.
-
-Hardware:
-- Arduino Nano (ATmega328P)
-- 2× electret microphones with LM393 comparator
-- Servo motor
-- TSOP1838 IR receiver + IR LED
-- RGB LED status indicator
-- Web Serial API interface (Chrome/Edge)
-
-Full documentation: https://github.com/forgeVII-org/TBAS
-
-#Arduino #AcousticDetection #TDOA #IFF #EmbeddedSystems #DIY
-```
-
----
-
-## Video 2: Web Interface Walkthrough
-
-**Title:** TBAS Web Interface — Live Radar, IFF Display, Mode Control (Web Serial API)
-
-**Description:**
-```
-Walking through the TBAS web interface — a browser-based radar display that connects to Arduino over USB using Web Serial API.
-
-Features shown:
-- Live animated radar with servo sweep
-- IFF (Identification Friend or Foe) status display
-- Real-time bearing angle with needle indicator
-- Mode switching (Manual, Surveillance, Servo Test, Acoustic)
-- TX mode toggle (Friend/Enemy)
-- Timestamped event log
-- Auto-reconnect on disconnect
-
-No drivers. No server. No installation. Just open in Chrome and click Connect.
-
-Full documentation: https://github.com/forgeVII-org/TBAS
-
-#WebSerial #Arduino #Radar #IFF #EmbeddedSystems
-```
-
----
-
-## Video 3: IFF Rolling Code System
-
-**Title:** TBAS — Dynamic IFF Rolling Code System (NEC IR Protocol)
-
-**Description:**
-```
-Explaining the IFF (Identification Friend or Foe) system in TBAS — uses NEC protocol IR communication with a dynamic rolling code instead of a fixed static code.
-
-code = ( KEY × counter + 5 ) mod 256
-
-Both units share the same KEY and maintain a synchronized counter. The counter increments on every successful Friend exchange, so the code changes every cycle. An intercepted code cannot be replayed because the expected code has already advanced.
-
-Demonstrated:
-- Friend TX mode (correct code) → GREEN
-- Enemy TX mode (wrong code) → RED
-- No response → BLUE
-- Rolling code counter increment
-
-Full documentation: https://github.com/forgeVII-org/TBAS
-
-#IFF #RollingCode #NEC #IR #Arduino #Security
-```
-
----
-
-## Video 4: Build Process
-
-**Title:** Building TBAS — Arduino Acoustic Direction Finder from Scratch
-
-**Description:**
-```
-Full build process of TBAS (Tactical Battlefield Awareness Suite) — from bare Arduino Nano to working acoustic direction finder.
+Two electret microphones spaced 28cm apart detect sound. TDOA (Time Difference of Arrival) physics calculates the angle. A servo rotates toward the source in real time.
 
 What you'll see:
-- Arduino Nano and component overview
-- Microphone circuit with LM393 comparator
-- 28cm mic spacing calibration
-- Servo mounting with TSOP1838 IR receiver
-- RGB LED and button wiring
-- Firmware upload and first boot
-- Web interface connection and testing
-- Live acoustic detection test
+- Sound detection from different angles
+- Servo tracking the sound source
+- TDOA calculation accuracy
+- Response time and detection range
 
-Total cost: ~$10-15 (all components from AliExpress/local market)
+Hardware: Arduino Nano, 2× electret microphones, LM393 comparator, servo motor
 
 Full documentation: https://github.com/forgeVII-org/TBAS
 
-#Arduino #BuildProcess #AcousticDetection #DIY #EmbeddedSystems
+#Arduino #AcousticDetection #TDOA #DirectionFinding #EmbeddedSystems
 ```
 
 ---
 
-## Upload Settings (Same for All)
+## Video 2: Full Explanation in Hinglish
+
+**Title:** TBAS — Complete Explanation in Hinglish (Tactical Battlefield Awareness Suite)
+
+**Description:**
+```
+TBAS (Tactical Battlefield Awareness Suite) ka complete explanation Hinglish mein.
+
+Is video mein bataya hai:
+- TBAS kya hai aur kaise kaam karta hai
+- Acoustic direction finding kaise hota hai (TDOA)
+- IFF (Identification Friend or Foe) system kaise work karta hai
+- Rolling code security kaise hoti hai
+- Web interface kaise connect hota hai
+- Har mode kya karta hai (Manual, Surveillance, Servo Test, Acoustic)
+- Pin mapping aur wiring
+- Sab kuch detail mein
+
+Hardware: Arduino Nano, 2× electret microphones, LM393 comparator, servo motor, TSOP1838 IR receiver, RGB LED
+
+Full documentation: https://github.com/forgeVII-org/TBAS
+
+#Arduino #TBAS #Hinglish #EmbeddedSystems #IFF #AcousticDetection
+```
+
+---
+
+## Upload Settings (Same for Both)
 
 - **Visibility:** Unlisted
 - **Category:** Science & Technology
 - **Comments:** On
 - **License:** Creative Commons — Attribution
-- **Playlist:** Create "TBAS — Tactical Battlefield Awareness Suite" playlist and add all 4
+- **Playlist:** Create "TBAS — Tactical Battlefield Awareness Suite" playlist and add both

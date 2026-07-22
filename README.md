@@ -12,12 +12,10 @@ No GPS. No cameras. No complex processors. Just sound, math, and IR light.
 
 | Video | Description |
 |---|---|
-| <!-- FlightGear demo --> |
-| <!-- War Thunder demo --> |
-| <!-- Build process --> |
-| <!-- Web interface demo --> |
+| <!-- Acoustic test video link --> | Acoustic direction finding in action — servo tracking sound |
+| <!-- Hinglish explanation video link --> | Complete TBAS explanation in Hinglish |
 
-> Videos coming soon — uploading to YouTube.
+> Videos uploading to YouTube — links coming soon.
 
 ---
 
@@ -25,9 +23,10 @@ No GPS. No cameras. No complex processors. Just sound, math, and IR light.
 
 | Photo | Description |
 |---|---|
-| <!-- Add photos here --> |
+| <!-- Raw look photo link --> | All components mounted on zero board |
+| <!-- Electronics photo link --> | Arduino Nano and wiring closeup |
 
-> Photos coming soon — uploading from phone.
+> Photos uploading soon.
 
 ---
 
