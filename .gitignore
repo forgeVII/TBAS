@@ -1,0 +1,24 @@
+# Build outputs
+*.o
+*.elf
+*.hex
+*.bin
+*.map
+*.lss
+*.eep
+
+# Arduino IDE
+*.bak
+*.orig
+*.swp
+*.tmp
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+*.code-workspace
