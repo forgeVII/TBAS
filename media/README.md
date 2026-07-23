@@ -11,15 +11,6 @@
 
 | File | Description |
 |---|---|
-| `Electronics on zero board.jpg` | Arduino Nano and wiring closeup |
 | `Raw look after mounting all components.jpg` | All components mounted on zero board |
-
-## YouTube Upload
-
-Both videos will be uploaded as unlisted to YouTube. See `docs/youtube_videos.md` for titles and descriptions.
-
-## Naming Convention
-
-Use lowercase with underscores:
-- `descriptive_name.jpg`
-- `descriptive_name.mp4`
+| `Electronics on zero board.jpg` | Arduino Nano and wiring closeup |
+| `Circuit diagram.jpg` | Full circuit schematic |

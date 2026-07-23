@@ -12,10 +12,8 @@ No GPS. No cameras. No complex processors. Just sound, math, and IR light.
 
 | Video | Description |
 |---|---|
-| <!-- Acoustic test video link --> | Acoustic direction finding in action — servo tracking sound |
-| <!-- Hinglish explanation video link --> | Complete TBAS explanation in Hinglish |
-
-> Videos uploading to YouTube — links coming soon.
+| [![Acoustic Test](https://img.youtube.com/vi/-oe6jBOdPck/0.jpg)](https://youtu.be/-oe6jBOdPck) | Acoustic direction finding in action — servo tracking sound |
+| [![TBAS Explanation](https://img.youtube.com/vi/8fTTm5eTX48/0.jpg)](https://youtu.be/8fTTm5eTX48) | Complete TBAS explanation in Hinglish |
 
 ---
 
@@ -23,10 +21,9 @@ No GPS. No cameras. No complex processors. Just sound, math, and IR light.
 
 | Photo | Description |
 |---|---|
-| <!-- Raw look photo link --> | All components mounted on zero board |
-| <!-- Electronics photo link --> | Arduino Nano and wiring closeup |
-
-> Photos uploading soon.
+| ![Raw Look](media/Raw%20look%20after%20mounting%20all%20components.jpg) | All components mounted on zero board |
+| ![Electronics](media/Electronics%20on%20zero%20board.jpg) | Arduino Nano and wiring closeup |
+| ![Circuit Diagram](media/Circuit%20diagram.jpg) | Full circuit schematic |
 
 ---
 
